@@ -2,11 +2,10 @@ language: csharp
 solution: coveralls.net.sln
 env:
   global:
-  - secure: J+zsDsDN7qjxFVGWQm4calb6y8bvs2W9LgYCTtR//YRGbLY8qOZtHyjt3SZIKax80YJZoH4XjzKKMsKsRNzxkIfYaJR2pIdAxN23DTkvy/8N9a/CaZSyydhdlTL3lUP7sniSvhbi+UeejLZ3Zg5UvMvZwgwgNFkuDmmdWHdxoe4=
-
+  - secure: "A1K3mZ885hdCKg+3BGEd/wsx8SuzwLUhbEcBI7XZy5UGJMlJAFSvGr0NoC56EHfa5liTYv03ZNZqhcZkgB7sby81PzC1y487pEq7CILz5dhiL/P48jm1H3M+pXvnA4UHD3OCO1Wp8Mvq+vFAJM2l9SIhZIuMfeaHmLlfWiTKXRg="
+  
 install:
 - nuget restore coveralls.net.sln
-
 addons:
   coverity_scan:
     project:
