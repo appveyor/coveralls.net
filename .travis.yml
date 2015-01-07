@@ -1,0 +1,18 @@
+language: csharp
+solution: coveralls.net.sln
+env:
+  global:
+  - secure: J+zsDsDN7qjxFVGWQm4calb6y8bvs2W9LgYCTtR//YRGbLY8qOZtHyjt3SZIKax80YJZoH4XjzKKMsKsRNzxkIfYaJR2pIdAxN23DTkvy/8N9a/CaZSyydhdlTL3lUP7sniSvhbi+UeejLZ3Zg5UvMvZwgwgNFkuDmmdWHdxoe4=
+
+install:
+- nuget restore coveralls.net.sln
+
+addons:
+  coverity_scan:
+    project:
+      name: jdeering/coveralls.net
+      description: Build submitted via Travis CI
+    notification_email: jason@deering.me
+    build_command_prepend: msbuild /t:Clean
+    build_command: msbuild /t:Rebuild
+    branch_pattern: coverity_scan
