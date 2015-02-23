@@ -11,6 +11,9 @@ namespace coveralls.net
         [Option('p', "parser", HelpText = "Parser to use (Currently only supports OpenCover)")]
         public ParserTypes Parser { get; set; }
 
+        [Option('d', "debug", HelpText = "Debug mode. WILL PRINT SENSITIVE DATA")]
+        public bool DebugMode { get; set; }
+
         private bool _useOpenCover;
         [Option("opencover")]
         public bool UseOpenCover
@@ -22,5 +25,8 @@ namespace coveralls.net
                 if (_useOpenCover) Parser = ParserTypes.OpenCover;
             }
         }
+
+        [Option("repo-token")]
+        public string CoverallsRepoToken { get; set; }
     }
 }

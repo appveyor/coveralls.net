@@ -18,6 +18,12 @@ namespace coveralls.net
         static void Main(string[] args)
         {
             Options = Parser.Default.ParseArguments<CommandLineOptions>(args).Value;
+            
+            if (Options.DebugMode)
+            {
+                Console.WriteLine("[debug] > $env.COVERALLS_REPO_TOKEN: {0}",
+                    Environment.GetEnvironmentVariable("COVERALLS_REPO_TOKEN"));
+            }
 
             try
             {
@@ -26,15 +32,25 @@ namespace coveralls.net
                     FileSystem = new LocalFileSystem()
                 };
 
+                // Use specified repo token over Environment variable
+                if (Options.CoverallsRepoToken.IsNotBlank())
+                    coveralls.RepoToken = Options.CoverallsRepoToken;
+
                 if (!coveralls.CoverageFiles.Any())
                 {
-                    Console.WriteLine("No coverage statistics");
+                    Console.WriteLine("No coverage statistics files.");
                     return;
                 }
 
                 if (coveralls.RepoToken.IsBlank())
                 {
-                    Console.WriteLine("Invalid Coveralls Repo Token");
+                    Console.WriteLine("Blank or invalid Coveralls Repo Token.");
+
+                    if (coveralls.ServiceName == "appveyor")
+                    {
+                        Console.WriteLine(" - Did you prefix your token with 'secure:' without encrypting it?");
+                        Console.WriteLine(" - Is this a Pull Request? AppVeyor does not decrypt environment variables for pull requests.");
+                    }
                     return;
                 }
 
@@ -51,10 +67,11 @@ namespace coveralls.net
                     Git = coveralls.Repository.Data
                 };
 
-                Console.WriteLine("Service: {0}", coverallsData.ServiceName);
-                Console.WriteLine(" Job ID: {0}", coverallsData.ServiceJobId);
-                Console.WriteLine("  Files: {0}", coverallsData.SourceFiles.Length);
-                Console.WriteLine(" Commit: {0}", coverallsData.Git.Head.Id);
+                Console.WriteLine("     Service: {0}", coverallsData.ServiceName);
+                Console.WriteLine("      Job ID: {0}", coverallsData.ServiceJobId);
+                Console.WriteLine("       Files: {0}", coverallsData.SourceFiles.Length);
+                Console.WriteLine("      Commit: {0}", coverallsData.Git.Head.Id);
+                Console.WriteLine("Pull Request: {0}", coverallsData.Git.Head.Id);
 
                 var json = JsonConvert.SerializeObject(coverallsData);
                 SendToCoveralls(json);
@@ -62,12 +79,21 @@ namespace coveralls.net
             catch (Exception e)
             {
                 Console.Error.WriteLine(e.Message);
+                if (e.InnerException != null)
+                    Console.Error.WriteLine(e.InnerException.Message);
+
                 Environment.Exit(1);
             }
         }
 
         private static void SendToCoveralls(string json)
         {
+            if (Options.DebugMode)
+            {
+                Console.WriteLine("[debug] > Coveralls Data: \n{0}",
+                    JsonPrettyPrint(json));
+            }
+
             // Send to coveralls.io
             HttpResponseMessage response;
             using (var client = new HttpClient())
@@ -81,8 +107,19 @@ namespace coveralls.net
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception(string.Format("Error sending to Coveralls.io ({0} - {1}", response.StatusCode, response.ReasonPhrase));
+                var msg = string.Format("Error sending to coveralls.io ({0} - {1}).", 
+                    response.StatusCode,
+                    response.ReasonPhrase);
+                msg += "\n - Error code 422 indicate a problem with your token. Try using the --debug commandline option.";
+
+                throw new Exception(msg);
             }
+        }
+
+        private static string JsonPrettyPrint(string json)
+        {
+            dynamic parsedJson = JsonConvert.DeserializeObject(json);
+            return JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
         }
     }
 }
